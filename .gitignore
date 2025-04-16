@@ -1,0 +1,23 @@
+# Serverless directories
+.serverless
+node_modules
+package.json
+package-lock.json
+
+# golang output binary directory
+bin
+/bootstrap
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+

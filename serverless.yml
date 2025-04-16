@@ -1,0 +1,62 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: scaryfelidae
+service: lifeos
+
+provider:
+  name: aws
+  runtime: provided.al2
+  region: eu-west-1
+  architecture: x86_64
+  stage: dev
+  iam:
+    role:
+      statements:
+      - Effect: Allow
+        Action:
+          - ssm:*
+        Resource: "arn:aws:ssm:*"
+      - Effect: Allow
+        Action:
+        - ses:SendEmail
+        Resource: "arn:aws:ses:*"
+  # environment:
+  #   variable1: value1
+
+package:
+  patterns:
+  - '!./**'
+  - ./bootstrap
+
+functions:
+  daily_schedule:
+    handler: bootstrap
+    memorySize: 128
+    timeout: 20
+    environment:
+      LIFEOS_ACTION: daily_schedule
+    events:
+    - schedule: cron(45 3 ? * * *)
+  upcoming_event:
+    handler: bootstrap
+    memorySize: 128
+    timeout: 20
+    environment:
+      LIFEOS_ACTION: upcoming_event
+    events:
+    - schedule: cron(3/5 * ? * * *)
+  # # weekly notifications (run every week)
+  # monthly:
+  #   handler: bin/monthly
+  #   memorySize: 128
+  #   timeout: 20
+  #   events:
+  #   - schedule: cron(45 3 ? * * *)
+  # invoice reminder on the 15th
+  invoice_reminder:
+    handler: bootstrap
+    memorySize: 128
+    timeout: 20
+    environment:
+      LIFEOS_ACTION: invoice_reminder
+    events:
+    - schedule: cron(0 5 14 * ? *)
