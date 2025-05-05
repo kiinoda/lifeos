@@ -63,7 +63,7 @@ func NewEvent(line []any) (Event, error) {
 	return e, nil
 }
 
-func NewFutureEvent(line []any) (ScheduledEvent, error) {
+func NewScheduledEvent(line []any) (ScheduledEvent, error) {
 	event := ScheduledEvent{}
 	if silent, ok := line[0].(string); ok {
 		if strings.Trim(silent, " ") == "" {

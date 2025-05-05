@@ -98,7 +98,7 @@ func GetEventSchedule(ctx context.Context, sheetName string) ([]events.Scheduled
 	// Actual future events start at row 2; row 1 is header
 	for i := 1; i < len(resp.Values); i++ {
 		if len(resp.Values[i]) > 0 {
-			event, err := events.NewFutureEvent(resp.Values[i])
+			event, err := events.NewScheduledEvent(resp.Values[i])
 			if err != nil {
 				return result, err
 			}
