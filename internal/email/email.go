@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,9 +16,47 @@ import (
 )
 
 var (
-	ErrNoReminder = errors.New("No reminder found")
-	ErrNoEvents   = errors.New("No event found")
+	ErrNoReminder        = errors.New("No reminder found")
+	ErrNoEvents          = errors.New("No event found")
+	ErrNoScheduledEvents = errors.New("No scheduled event found")
 )
+
+func CreateEventScheduleMessageBody(dayOfWeek time.Weekday, eventList []events.ScheduledEvent) (string, string, error) {
+	pastEvents := ""
+	upcomingEvents := ""
+	text := ""
+	slices.SortFunc(eventList, func(a, b events.ScheduledEvent) int {
+		return int(a.Time.Sub(b.Time))
+	})
+
+	for _, event := range eventList {
+		if event.Alertable {
+			if event.Time.Before(time.Now().Add(-24 * time.Hour)) {
+				pastEvents = pastEvents + fmt.Sprintf("%8s * %s\n", event.Time.Format("20060102"), event.Desc)
+			}
+			if event.Time.After(time.Now().Add(-24*time.Hour)) && event.Time.Before(time.Now().Add(7*24*time.Hour)) {
+				upcomingEvents = upcomingEvents + fmt.Sprintf("%8s * %s\n", event.Time.Format("20060102"), event.Desc)
+			}
+		}
+	}
+	if pastEvents == "" && upcomingEvents == "" {
+		return "", "", ErrNoScheduledEvents
+	}
+
+	if upcomingEvents != "" && pastEvents != "" {
+		text = "Upcoming Events\n" + upcomingEvents + "\nPast Events\n" + pastEvents
+	} else {
+		if upcomingEvents != "" {
+			text = "Upcoming Events\n" + upcomingEvents
+		}
+		if pastEvents != "" {
+			text = "Past Events\n" + pastEvents
+		}
+	}
+
+	html := fmt.Sprintf("<html><pre>%s</pre></html>", text)
+	return text, html, nil
+}
 
 func CreateReminderMessageBody(dayOfWeek time.Weekday, events []events.Event) (string, string, error) {
 	found := false

@@ -36,12 +36,20 @@ functions:
       LIFEOS_ACTION: daily_schedule
     events:
     - schedule: cron(45 3 ? * * *)
-  upcoming_event:
+  event_schedule:
     handler: bootstrap
     memorySize: 128
     timeout: 20
     environment:
-      LIFEOS_ACTION: upcoming_event
+      LIFEOS_ACTION: event_schedule
+    events:
+    - schedule: cron(45 3 ? * * *)
+  event_notification:
+    handler: bootstrap
+    memorySize: 128
+    timeout: 20
+    environment:
+      LIFEOS_ACTION: event_notification
     events:
     - schedule: cron(3/5 * ? * * *)
   # # weekly notifications (run every week)

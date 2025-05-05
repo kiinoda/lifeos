@@ -17,12 +17,13 @@ import (
 const (
 	defaultRegion = "eu-west-1"
 	ssmPath       = "/personal/daily_schedule/config"
-	sheetName     = "Weekly"
+	weeklySheet   = "Weekly"
+	scheduleSheet = "Future"
 )
 
 func handler(ctx context.Context) error {
 	action, _ := os.LookupEnv("LIFEOS_ACTION")
-	if !slices.Contains([]string{"daily_schedule", "upcoming_event", "invoice_reminder"}, action) {
+	if !slices.Contains([]string{"daily_schedule", "event_schedule", "event_notification", "invoice_reminder"}, action) {
 		return fmt.Errorf("Please set LIFEOS_ACTION environment variable")
 	}
 
@@ -33,16 +34,16 @@ func handler(ctx context.Context) error {
 
 	ctx = config.ContextWithConfig(ctx, cfg)
 
-	events, err := sheets.GetEvents(ctx, sheetName)
-	if err != nil {
-		return fmt.Errorf("Failed to extract events: %w", err)
-	}
-
 	// Weekday starts at 0, our table starts at 1
 	dayOfWeek := time.Now().Weekday() - 1
 
 	if action == "daily_schedule" {
 		log.Println("Daily schedule")
+
+		events, err := sheets.GetEvents(ctx, weeklySheet)
+		if err != nil {
+			return fmt.Errorf("Failed to extract events: %w", err)
+		}
 		textBody, htmlBody, err := email.CreateDailyMessageBody(dayOfWeek, events)
 		if err != nil {
 			if errors.Is(err, email.ErrNoEvents) {
@@ -58,8 +59,34 @@ func handler(ctx context.Context) error {
 		}
 	}
 
-	if action == "upcoming_event" {
-		log.Println("Upcoming event")
+	if action == "event_schedule" {
+		log.Println("Event Schedule")
+
+		events, err := sheets.GetEventSchedule(ctx, scheduleSheet)
+		if err != nil {
+			return fmt.Errorf("Failed to extract future events: %w", err)
+		}
+		textBody, htmlBody, err := email.CreateEventScheduleMessageBody(dayOfWeek, events)
+		if err != nil {
+			if errors.Is(err, email.ErrNoScheduledEvents) {
+				return nil
+			} else {
+				return err
+			}
+		}
+		err = email.SendEmail(ctx, "LifeOS Event Schedule Bot", "Event Schedule", textBody, htmlBody)
+		if err != nil {
+			return fmt.Errorf("Failed to send email: %w", err)
+		}
+	}
+
+	if action == "event_notification" {
+		log.Println("Event Notification")
+
+		events, err := sheets.GetEvents(ctx, weeklySheet)
+		if err != nil {
+			return fmt.Errorf("Failed to extract events: %w", err)
+		}
 		textBody, htmlBody, err := email.CreateReminderMessageBody(dayOfWeek, events)
 		if err != nil {
 			if errors.Is(err, email.ErrNoReminder) {
@@ -77,6 +104,7 @@ func handler(ctx context.Context) error {
 
 	if action == "invoice_reminder" {
 		log.Println("Sending reminder about invoices")
+
 		textBody, htmlBody, err := email.CreateInvoiceReminderMessageBody()
 		if err != nil {
 			return err
