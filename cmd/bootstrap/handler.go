@@ -24,12 +24,12 @@ const (
 func handler(ctx context.Context) error {
 	action, _ := os.LookupEnv("LIFEOS_ACTION")
 	if !slices.Contains([]string{"daily_schedule", "event_schedule", "event_notification", "invoice_reminder"}, action) {
-		return fmt.Errorf("Please set LIFEOS_ACTION environment variable")
+		return fmt.Errorf("please set LIFEOS_ACTION environment variable")
 	}
 
 	cfg, err := config.NewConfig(defaultRegion, ssmPath)
 	if err != nil {
-		return fmt.Errorf("Failed to create application config: %w", err)
+		return fmt.Errorf("failed to create application config: %w", err)
 	}
 
 	ctx = config.ContextWithConfig(ctx, cfg)
@@ -42,7 +42,7 @@ func handler(ctx context.Context) error {
 
 		events, err := sheets.GetEvents(ctx, weeklySheet)
 		if err != nil {
-			return fmt.Errorf("Failed to extract events: %w", err)
+			return fmt.Errorf("failed to extract events: %w", err)
 		}
 		textBody, htmlBody, err := email.CreateDailyMessageBody(dayOfWeek, events)
 		if err != nil {
@@ -55,7 +55,7 @@ func handler(ctx context.Context) error {
 		}
 		err = email.SendEmail(ctx, "LifeOS", "Daily Schedule", textBody, htmlBody)
 		if err != nil {
-			return fmt.Errorf("Failed to send email: %w", err)
+			return fmt.Errorf("failed to send email: %w", err)
 		}
 	}
 
@@ -64,7 +64,7 @@ func handler(ctx context.Context) error {
 
 		events, err := sheets.GetEventSchedule(ctx, scheduleSheet)
 		if err != nil {
-			return fmt.Errorf("Failed to extract future events: %w", err)
+			return fmt.Errorf("failed to extract future events: %w", err)
 		}
 		textBody, htmlBody, err := email.CreateEventScheduleMessageBody(dayOfWeek, events)
 		if err != nil {
@@ -76,7 +76,7 @@ func handler(ctx context.Context) error {
 		}
 		err = email.SendEmail(ctx, "LifeOS Event Schedule Bot", "Event Schedule", textBody, htmlBody)
 		if err != nil {
-			return fmt.Errorf("Failed to send email: %w", err)
+			return fmt.Errorf("failed to send email: %w", err)
 		}
 	}
 
@@ -85,7 +85,7 @@ func handler(ctx context.Context) error {
 
 		events, err := sheets.GetEvents(ctx, weeklySheet)
 		if err != nil {
-			return fmt.Errorf("Failed to extract events: %w", err)
+			return fmt.Errorf("failed to extract events: %w", err)
 		}
 		textBody, htmlBody, err := email.CreateReminderMessageBody(dayOfWeek, events)
 		if err != nil {
@@ -98,7 +98,7 @@ func handler(ctx context.Context) error {
 		}
 		err = email.SendEmail(ctx, "LifeOS Reminder Bot", "Upcoming Event", textBody, htmlBody)
 		if err != nil {
-			return fmt.Errorf("Failed to send email: %w", err)
+			return fmt.Errorf("failed to send email: %w", err)
 		}
 	}
 
@@ -111,7 +111,7 @@ func handler(ctx context.Context) error {
 		}
 		err = email.SendEmail(ctx, "LifeOS", "Invoice Reminder", textBody, htmlBody)
 		if err != nil {
-			return fmt.Errorf("Failed to send email: %w", err)
+			return fmt.Errorf("failed to send email: %w", err)
 		}
 	}
 
