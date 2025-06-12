@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -9,6 +10,14 @@ import (
 )
 
 func main() {
+	_, debug := os.LookupEnv("LIFEOS_DEBUG")
+	if debug {
+		log.Println("Debugging requested")
+		for _, pair := range os.Environ() {
+			fmt.Println(pair)
+		}
+	}
+
 	_, localRun := os.LookupEnv("LOCAL_RUN")
 	if localRun {
 		log.Println("Running on local environment")
