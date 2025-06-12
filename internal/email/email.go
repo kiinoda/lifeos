@@ -89,7 +89,7 @@ func CreateReminderMessageBody(dayOfWeek time.Weekday, events []events.Event) (s
 func CreateInvoiceReminderMessageBody() (string, string, error) {
 	text := "The following companies do not email invoices. Please save them manually.\n\n"
 
-	for _, c := range []string{"OpenAI", "Anthropic"} {
+	for _, c := range []string{"OpenAI", "Anthropic", "Amp"} {
 		text = text + fmt.Sprintf("* %s\n", c)
 	}
 
