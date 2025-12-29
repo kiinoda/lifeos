@@ -2,6 +2,7 @@ package events
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,7 +29,7 @@ type Event struct {
 type ScheduledEvent struct {
 	Alertable bool
 	Time      time.Time
-	Signifier string
+	Recurring bool
 	Desc      string
 }
 
@@ -64,6 +65,8 @@ func NewEvent(line []any) (Event, error) {
 }
 
 func NewScheduledEvent(line []any) (ScheduledEvent, error) {
+	isYearKnown := false
+
 	event := ScheduledEvent{}
 	if silent, ok := line[0].(string); ok {
 		if strings.Trim(silent, " ") == "" {
@@ -73,8 +76,21 @@ func NewScheduledEvent(line []any) (ScheduledEvent, error) {
 		return event, fmt.Errorf("Could not extract event status for %v", line[0])
 	}
 
-	for _, format := range []string{"200601", "20060102", "2006Jan", "2006Jan02", "2006Jan2"} {
-		if t, err := time.Parse(format, line[1].(string)); err == nil {
+	event.Recurring = false
+	if empty, ok := line[2].(string); ok {
+		if strings.Trim(empty, " ") != "" {
+			event.Recurring = true
+		}
+	}
+
+	for _, format := range []string{"0102", "200601", "20060102", "2006Jan", "2006Jan02", "2006Jan2"} {
+		eventTime := line[1].(string)
+		if len(eventTime) == 4 {
+			eventTime = strconv.Itoa(time.Now().Year()) + eventTime
+		} else {
+			isYearKnown = true
+		}
+		if t, err := time.Parse(format, eventTime); err == nil {
 			event.Time = t
 			break
 		}
@@ -83,8 +99,23 @@ func NewScheduledEvent(line []any) (ScheduledEvent, error) {
 	if line[3] != nil {
 		if d, ok := line[3].(string); ok {
 			event.Desc = d
+			if event.Recurring {
+				if isYearKnown {
+					event.Desc = "(" + strconv.Itoa(event.Time.Year()) + ") " + event.Desc
+				} else {
+					event.Desc = "(R) " + event.Desc
+				}
+			}
 		} else {
 			return event, fmt.Errorf("Could not extract event description for %v", line[3])
+		}
+	}
+
+	// For recurring events, if they're already past this year, set their year to be next year
+	if event.Recurring {
+		if event.Time.Before(time.Now()) {
+			_, m, d := event.Time.Date()
+			event.Time = time.Date(time.Now().Year()+1, m, d, 0, 0, 0, 0, event.Time.Location())
 		}
 	}
 

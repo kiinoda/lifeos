@@ -32,10 +32,10 @@ func CreateEventScheduleMessageBody(dayOfWeek time.Weekday, eventList []events.S
 	for _, event := range eventList {
 		if event.Alertable {
 			if event.Time.Before(time.Now().Add(-24 * time.Hour)) {
-				pastEvents = pastEvents + fmt.Sprintf("%8s * %s\n", event.Time.Format("20060102"), event.Desc)
+				pastEvents = pastEvents + fmt.Sprintf("%s * %s\n", event.Time.Format("0102"), event.Desc)
 			}
 			if event.Time.After(time.Now().Add(-24*time.Hour)) && event.Time.Before(time.Now().Add(7*24*time.Hour)) {
-				upcomingEvents = upcomingEvents + fmt.Sprintf("%8s * %s\n", event.Time.Format("20060102"), event.Desc)
+				upcomingEvents = upcomingEvents + fmt.Sprintf("%s * %s\n", event.Time.Format("0102"), event.Desc)
 			}
 		}
 	}
