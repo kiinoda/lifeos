@@ -10,6 +10,18 @@ import (
 	gs "google.golang.org/api/sheets/v4"
 )
 
+func newSheetsService(ctx context.Context, cfg *config.AppConfig) (*gs.Service, error) {
+	credBytes, err := cfg.ServiceAccountKeyBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	return gs.NewService(ctx,
+		option.WithCredentialsJSON(credBytes),
+		option.WithScopes("https://www.googleapis.com/auth/spreadsheets.readonly"),
+	)
+}
+
 func GetEvents(ctx context.Context, sheetName string) ([]events.Event, error) {
 	result := []events.Event{}
 
@@ -18,25 +30,18 @@ func GetEvents(ctx context.Context, sheetName string) ([]events.Event, error) {
 		return result, err
 	}
 
-	apiKey := cfg.ApiKey
-	if apiKey == "" {
-		return nil, fmt.Errorf("apiKey not found")
-	}
-
-	spreadsheetId := cfg.SpreadsheetId
-	if spreadsheetId == "" {
+	if cfg.SpreadsheetId == "" {
 		return nil, fmt.Errorf("spreadsheetId not found")
 	}
 
-	// Create the sheets service using API key
-	service, err := gs.NewService(ctx, option.WithAPIKey(apiKey))
+	service, err := newSheetsService(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create sheets service: %w", err)
 	}
 
 	// Read the data from the sheet
 	readRange := fmt.Sprintf("%s!A1:Z1000", sheetName)
-	resp, err := service.Spreadsheets.Values.Get(spreadsheetId, readRange).Do()
+	resp, err := service.Spreadsheets.Values.Get(cfg.SpreadsheetId, readRange).Do()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrieve data from sheet: %w", err)
 	}
@@ -67,25 +72,18 @@ func GetEventSchedule(ctx context.Context, sheetName string) ([]events.Scheduled
 		return result, err
 	}
 
-	apiKey := cfg.ApiKey
-	if apiKey == "" {
-		return nil, fmt.Errorf("apiKey not found")
-	}
-
-	spreadsheetId := cfg.SpreadsheetId
-	if spreadsheetId == "" {
+	if cfg.SpreadsheetId == "" {
 		return nil, fmt.Errorf("spreadsheetId not found")
 	}
 
-	// Create the sheets service using API key
-	service, err := gs.NewService(ctx, option.WithAPIKey(apiKey))
+	service, err := newSheetsService(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create sheets service: %w", err)
 	}
 
 	// Read the data from the sheet
 	readRange := fmt.Sprintf("%s!A1:Z1000", sheetName)
-	resp, err := service.Spreadsheets.Values.Get(spreadsheetId, readRange).Do()
+	resp, err := service.Spreadsheets.Values.Get(cfg.SpreadsheetId, readRange).Do()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrieve data from sheet: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	awsssm "github.com/PaddleHQ/go-aws-ssm"
@@ -13,10 +14,17 @@ import (
 type ctxKey int
 
 type AppConfig struct {
-	SpreadsheetId string `json:"spreadsheetId"`
-	ApiKey        string `json:"apiKey"`
-	Sender        string `json:"sender"`
-	Recipient     string `json:"recipient"`
+	SpreadsheetId     string          `json:"spreadsheetId"`
+	ServiceAccountKey json.RawMessage `json:"serviceAccountKey"`
+	Sender            string          `json:"sender"`
+	Recipient         string          `json:"recipient"`
+}
+
+func (c *AppConfig) ServiceAccountKeyBytes() ([]byte, error) {
+	if len(c.ServiceAccountKey) == 0 {
+		return nil, fmt.Errorf("serviceAccountKey not found")
+	}
+	return []byte(c.ServiceAccountKey), nil
 }
 
 const configKey ctxKey = 0
