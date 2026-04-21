@@ -111,11 +111,14 @@ func NewScheduledEvent(line []any) (ScheduledEvent, error) {
 		}
 	}
 
-	// For recurring events, if they're more than 2 days past, set their year to be next year
+	// For recurring events, normalize to current year first, then advance to next year if more than 2 days past
 	if event.Recurring {
-		if event.Time.Before(time.Now().Add(-48 * time.Hour)) {
-			_, m, d := event.Time.Date()
+		_, m, d := event.Time.Date()
+		currentYearTime := time.Date(time.Now().Year(), m, d, 0, 0, 0, 0, event.Time.Location())
+		if currentYearTime.Before(time.Now().Add(-48 * time.Hour)) {
 			event.Time = time.Date(time.Now().Year()+1, m, d, 0, 0, 0, 0, event.Time.Location())
+		} else {
+			event.Time = currentYearTime
 		}
 	}
 
