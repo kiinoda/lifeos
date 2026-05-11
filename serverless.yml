@@ -4,7 +4,7 @@ service: lifeos
 
 provider:
   name: aws
-  runtime: provided.al2
+  runtime: provided.al2023
   region: eu-west-1
   architecture: x86_64
   stage: dev
