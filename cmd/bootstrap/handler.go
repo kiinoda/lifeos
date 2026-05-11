@@ -32,8 +32,11 @@ func handler(ctx context.Context) error {
 
 	ctx = config.ContextWithConfig(ctx, cfg)
 
-	// Weekday starts at 0, our table starts at 1
-	dayOfWeek := time.Now().Weekday() - 1
+	// Go's time.Weekday() is Sun=0, Mon=1...Sat=6, but our internal enum is Mon=0...Sun=6
+	// (matching the Mon-first column order in the spreadsheet). We can't change the enum
+	// without reordering the sheet, so we remap via (weekday+6)%7 to wrap Sunday correctly.
+	// A naive -1 subtraction breaks on Sundays, producing -1 (out of bounds).
+	dayOfWeek := time.Weekday((int(time.Now().Weekday()) + 6) % 7)
 
 	if action == "daily_schedule" {
 		log.Println("Daily schedule")
