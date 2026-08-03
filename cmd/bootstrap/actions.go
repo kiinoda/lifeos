@@ -11,6 +11,11 @@ import (
 	"github.com/kiinoda/lifeos/internal/sheets"
 )
 
+const (
+	weeklySheet   = "Weekly"
+	scheduleSheet = "Future"
+)
+
 func invoiceReminder(ctx context.Context) error {
 	textBody, htmlBody, err := email.CreateInvoiceReminderMessageBody()
 	if err != nil {

@@ -15,8 +15,6 @@ import (
 const (
 	defaultRegion = "eu-west-1"
 	ssmPath       = "/personal/daily_schedule/config"
-	weeklySheet   = "Weekly"
-	scheduleSheet = "Future"
 )
 
 func handler(ctx context.Context) error {
