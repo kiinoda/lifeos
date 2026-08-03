@@ -33,6 +33,23 @@ func eventNotification(ctx context.Context, dayOfWeek time.Weekday) error {
 	if err != nil {
 		return fmt.Errorf("failed to extract events: %w", err)
 	}
+
+	scheduledEvents, err := sheets.GetEventSchedule(ctx, scheduleSheet)
+	if err != nil {
+		return fmt.Errorf("failed to extract scheduled events: %w", err)
+	}
+	today := time.Now()
+	for _, scheduledEvent := range scheduledEvents {
+		if !scheduledEvent.Alert {
+			continue
+		}
+		y, m, d := scheduledEvent.Time.Date()
+		ty, tm, td := today.Date()
+		if y == ty && m == tm && d == td {
+			events = append(events, scheduledEvent.ToEvent(dayOfWeek))
+		}
+	}
+
 	textBody, htmlBody, err := email.CreateReminderMessageBody(dayOfWeek, events)
 	if err != nil {
 		if errors.Is(err, email.ErrNoReminder) {

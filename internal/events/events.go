@@ -2,10 +2,13 @@ package events
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var alertTimePattern = regexp.MustCompile(`^(\d{4})\s*(.*)$`)
 
 type DayOfWeek int
 
@@ -30,6 +33,7 @@ type ScheduledEvent struct {
 	Alertable bool
 	Time      time.Time
 	Recurring bool
+	Alert     bool
 	Desc      string
 }
 
@@ -77,9 +81,13 @@ func NewScheduledEvent(line []any) (ScheduledEvent, error) {
 	}
 
 	event.Recurring = false
-	if empty, ok := line[2].(string); ok {
-		if strings.Trim(empty, " ") != "" {
+	event.Alert = false
+	if marker, ok := line[2].(string); ok {
+		trimmed := strings.TrimSpace(marker)
+		if strings.EqualFold(trimmed, "r") {
 			event.Recurring = true
+		} else if strings.EqualFold(trimmed, "a") {
+			event.Alert = true
 		}
 	}
 
@@ -111,6 +119,16 @@ func NewScheduledEvent(line []any) (ScheduledEvent, error) {
 		}
 	}
 
+	if event.Alert {
+		if m := alertTimePattern.FindStringSubmatch(event.Desc); m != nil {
+			if t, err := time.Parse("1504", m[1]); err == nil {
+				y, mo, d := event.Time.Date()
+				event.Time = time.Date(y, mo, d, t.Hour(), t.Minute(), 0, 0, time.Local)
+				event.Desc = m[2]
+			}
+		}
+	}
+
 	// For recurring events, normalize to current year first, then advance to next year if more than 2 days past
 	if event.Recurring {
 		_, m, d := event.Time.Date()
@@ -123,6 +141,15 @@ func NewScheduledEvent(line []any) (ScheduledEvent, error) {
 	}
 
 	return event, nil
+}
+
+func (se ScheduledEvent) ToEvent(dayOfWeek time.Weekday) Event {
+	e := Event{
+		Time: se.Time,
+		Desc: se.Desc,
+	}
+	e.Days[dayOfWeek] = "x"
+	return e
 }
 
 func (e Event) GetTimePlaceholder() string {
