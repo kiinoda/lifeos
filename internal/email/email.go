@@ -15,13 +15,28 @@ import (
 	"github.com/kiinoda/lifeos/internal/events"
 )
 
+const spreadsheetURLFormat = "https://docs.google.com/spreadsheets/d/%s/edit"
+
 var (
 	ErrNoReminder        = errors.New("No reminder found")
 	ErrNoEvents          = errors.New("No event found")
 	ErrNoScheduledEvents = errors.New("No scheduled event found")
 )
 
-func CreateEventScheduleMessageBody(dayOfWeek time.Weekday, eventList []events.ScheduledEvent) (string, string, error) {
+// withSheetLink renders the text and HTML bodies, appending a link back to the
+// source spreadsheet. An empty spreadsheetId yields the plain bodies.
+func withSheetLink(text string, spreadsheetId string) (string, string) {
+	if spreadsheetId == "" {
+		return text, fmt.Sprintf("<html><pre>%s</pre></html>", text)
+	}
+
+	url := fmt.Sprintf(spreadsheetURLFormat, spreadsheetId)
+	textBody := fmt.Sprintf("%s\nLifeOS: %s\n", text, url)
+	htmlBody := fmt.Sprintf("<html><pre>%s\n<a href=%q>LifeOS</a></pre></html>", text, url)
+	return textBody, htmlBody
+}
+
+func CreateEventScheduleMessageBody(dayOfWeek time.Weekday, eventList []events.ScheduledEvent, spreadsheetId string) (string, string, error) {
 	pastEvents := ""
 	upcomingEvents := ""
 	text := ""
@@ -54,8 +69,8 @@ func CreateEventScheduleMessageBody(dayOfWeek time.Weekday, eventList []events.S
 		}
 	}
 
-	html := fmt.Sprintf("<html><pre>%s</pre></html>", text)
-	return text, html, nil
+	textBody, htmlBody := withSheetLink(text, spreadsheetId)
+	return textBody, htmlBody, nil
 }
 
 func CreateReminderMessageBody(dayOfWeek time.Weekday, events []events.Event) (string, string, error) {
@@ -97,7 +112,7 @@ func CreateInvoiceReminderMessageBody() (string, string, error) {
 	return text, html, nil
 }
 
-func CreateDailyMessageBody(dayOfWeek time.Weekday, events []events.Event) (string, string, error) {
+func CreateDailyMessageBody(dayOfWeek time.Weekday, events []events.Event, spreadsheetId string) (string, string, error) {
 	found := false
 	text := ""
 	for _, event := range events {
@@ -110,8 +125,8 @@ func CreateDailyMessageBody(dayOfWeek time.Weekday, events []events.Event) (stri
 		return "", "", ErrNoEvents
 	}
 
-	html := fmt.Sprintf("<html><pre>%s</pre></html>", text)
-	return text, html, nil
+	textBody, htmlBody := withSheetLink(text, spreadsheetId)
+	return textBody, htmlBody, nil
 }
 
 func SendEmail(ctx context.Context, fromLabel string, subject string, textBody string, htmlBody string) error {

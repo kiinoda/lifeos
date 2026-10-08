@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/kiinoda/lifeos/internal/config"
 	"github.com/kiinoda/lifeos/internal/email"
 	"github.com/kiinoda/lifeos/internal/sheets"
 )
@@ -67,11 +68,15 @@ func eventNotification(ctx context.Context, dayOfWeek time.Weekday) error {
 }
 
 func dailySchedule(ctx context.Context, dayOfWeek time.Weekday) error {
+	cfg, err := config.ConfigFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get config from context: %w", err)
+	}
 	events, err := sheets.GetEvents(ctx, weeklySheet)
 	if err != nil {
 		return fmt.Errorf("failed to extract events: %w", err)
 	}
-	textBody, htmlBody, err := email.CreateDailyMessageBody(dayOfWeek, events)
+	textBody, htmlBody, err := email.CreateDailyMessageBody(dayOfWeek, events, cfg.SpreadsheetId)
 	if err != nil {
 		if errors.Is(err, email.ErrNoEvents) {
 			log.Println(err)
@@ -88,11 +93,15 @@ func dailySchedule(ctx context.Context, dayOfWeek time.Weekday) error {
 }
 
 func eventSchedule(ctx context.Context, dayOfWeek time.Weekday) error {
+	cfg, err := config.ConfigFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get config from context: %w", err)
+	}
 	events, err := sheets.GetEventSchedule(ctx, scheduleSheet)
 	if err != nil {
 		return fmt.Errorf("failed to extract future events: %w", err)
 	}
-	textBody, htmlBody, err := email.CreateEventScheduleMessageBody(dayOfWeek, events)
+	textBody, htmlBody, err := email.CreateEventScheduleMessageBody(dayOfWeek, events, cfg.SpreadsheetId)
 	if err != nil {
 		if errors.Is(err, email.ErrNoScheduledEvents) {
 			return nil
