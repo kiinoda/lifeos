@@ -2,6 +2,12 @@
 org: scaryfelidae
 service: lifeos
 
+# Single source of truth for the SSM Parameter Store location of the app config.
+custom:
+  ssmBasePath: /personal/daily_schedule
+  ssmParameterName: config
+  ssmPath: ${self:custom.ssmBasePath}/${self:custom.ssmParameterName}
+
 provider:
   name: aws
   runtime: provided.al2023
@@ -13,14 +19,14 @@ provider:
       statements:
       - Effect: Allow
         Action:
-          - ssm:*
-        Resource: "arn:aws:ssm:*"
+        - ssm:GetParametersByPath
+        Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter${self:custom.ssmBasePath}/*"
       - Effect: Allow
         Action:
         - ses:SendEmail
         Resource: "arn:aws:ses:*"
-  # environment:
-  #   variable1: value1
+  environment:
+    LIFEOS_SSM_PATH: ${self:custom.ssmPath}
 
 package:
   patterns:

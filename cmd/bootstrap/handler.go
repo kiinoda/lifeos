@@ -12,10 +12,7 @@ import (
 	"github.com/kiinoda/lifeos/internal/config"
 )
 
-const (
-	defaultRegion = "eu-west-1"
-	ssmPath       = "/personal/daily_schedule/config"
-)
+const defaultRegion = "eu-west-1"
 
 func handler(ctx context.Context) error {
 	action, _ := os.LookupEnv("LIFEOS_ACTION")
@@ -23,7 +20,18 @@ func handler(ctx context.Context) error {
 		return fmt.Errorf("please set LIFEOS_ACTION environment variable")
 	}
 
-	cfg, err := config.NewConfig(defaultRegion, ssmPath)
+	ssmPath, _ := os.LookupEnv("LIFEOS_SSM_PATH")
+	if ssmPath == "" {
+		return fmt.Errorf("please set LIFEOS_SSM_PATH environment variable")
+	}
+
+	// The Lambda runtime always sets AWS_REGION; defaultRegion only kicks in for local runs.
+	region, _ := os.LookupEnv("AWS_REGION")
+	if region == "" {
+		region = defaultRegion
+	}
+
+	cfg, err := config.NewConfig(region, ssmPath)
 	if err != nil {
 		return fmt.Errorf("failed to create application config: %w", err)
 	}
